@@ -6,7 +6,7 @@ let web3,contract;
 function App() {
 
   const [account,setAccount] = useState()
-  const contractAddress = "0x6057ad9f0BDf6622e554B5fACD90A1F35c19956e";
+  const contractAddress = "0x03AfF2Af74D355E4bEE93301a5e003F8A2a7ec23";
 
   useEffect(async()=>{
     if(!window.ethereum){
@@ -27,9 +27,9 @@ function App() {
     
   },[]);
     
-  async function CreateProject(NFTPrice,isPaused,Quantity){
+  async function CreateProject(NFTPrice,isPaused,Quantity,URI){
     const amount = web3.utils.toWei(NFTPrice,"ether");
-    const result = contract.methods.createProject(amount,isPaused,Quantity).send({from: account});
+    const result = contract.methods.createProject(amount,isPaused,Quantity,URI).send({from: account});
     result.on("transactionHash",(hash)=>{
       console.log("Transaction sent successfully. Check console for Transaction hash")
       console.log("Transaction Hash is ",hash)

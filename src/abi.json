@@ -124,6 +124,11 @@
 				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "nftURI",
+				"type": "string"
 			}
 		],
 		"name": "createProject",
@@ -195,6 +200,11 @@
 						"internalType": "uint256",
 						"name": "amountSold",
 						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "URI",
+						"type": "string"
 					}
 				],
 				"indexed": false,
@@ -284,11 +294,6 @@
 	},
 	{
 		"inputs": [
-			{
-				"internalType": "string",
-				"name": "accountURI",
-				"type": "string"
-			},
 			{
 				"internalType": "uint256",
 				"name": "ProjectId",
@@ -421,6 +426,11 @@
 						"internalType": "uint256",
 						"name": "amountSold",
 						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "URI",
+						"type": "string"
 					}
 				],
 				"internalType": "struct AccountNFT.Project[]",
@@ -491,6 +501,11 @@
 						"internalType": "uint256",
 						"name": "amountSold",
 						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "URI",
+						"type": "string"
 					}
 				],
 				"internalType": "struct AccountNFT.Project",
