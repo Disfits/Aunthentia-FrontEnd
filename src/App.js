@@ -6,7 +6,7 @@ let web3,contract;
 function App() {
 
   const [account,setAccount] = useState()
-  const contractAddress = "0x0aC423ad736b3E288643fC99d4F3f47eB683C5a9";
+  const contractAddress = "0x6057ad9f0BDf6622e554B5fACD90A1F35c19956e";
 
   useEffect(async()=>{
     if(!window.ethereum){
@@ -36,6 +36,7 @@ function App() {
     }).once("confirmation",(confirmationNumber,receipt)=>{
       if(receipt.status){
         console.log("Transaction processed successfully")
+        GetAllProjectInfo();
       }else{
         console.log("Transaction failed");
       }
@@ -43,10 +44,76 @@ function App() {
     })
   }
 
-  async function GetAllProjectInfo(NFTPrice,isPaused,Quantity){
+  async function GetAllProjectInfo(){
     const result = await contract.methods.getAllUserProjectInfo().call({from:account});
     console.log(result);
   }
+
+  async function ChangeNFTPrice(ProjectID,newPrice){
+    const amount = web3.utils.toWei(newPrice,"ether");
+    const result = contract.methods.changeProjectPrice(ProjectID,amount).send({from: account});
+    result.on("transactionHash",(hash)=>{
+      console.log("Transaction sent successfully. Check console for Transaction hash")
+      console.log("Transaction Hash is ",hash)
+    }).once("confirmation",(confirmationNumber,receipt)=>{
+      if(receipt.status){
+        console.log("Transaction processed successfully")
+      }else{
+        console.log("Transaction failed");
+      }
+      console.log(receipt)
+    })
+  }
+
+  async function ChangeNFTPause(ProjectID,PauseStatus){
+    const result = contract.methods.changePauseStatus(ProjectID,PauseStatus).send({from: account});
+    result.on("transactionHash",(hash)=>{
+      console.log("Transaction sent successfully. Check console for Transaction hash")
+      console.log("Transaction Hash is ",hash)
+    }).once("confirmation",(confirmationNumber,receipt)=>{
+      if(receipt.status){
+        console.log("Transaction processed successfully")
+      }else{
+        console.log("Transaction failed");
+      }
+      console.log(receipt)
+    })
+  }
+
+  async function IncreaseNFTQuantity(ProjectID,NewAmount){
+    const result = contract.methods.increateNFTAmount(ProjectID,NewAmount).send({from: account});
+    result.on("transactionHash",(hash)=>{
+      console.log("Transaction sent successfully. Check console for Transaction hash")
+      console.log("Transaction Hash is ",hash)
+    }).once("confirmation",(confirmationNumber,receipt)=>{
+      if(receipt.status){
+        console.log("Transaction processed successfully")
+      }else{
+        console.log("Transaction failed");
+      }
+      console.log(receipt)
+    })
+  }
+
+  async function ShowBalanceAmount(){
+    const result = await contract.methods.showAmount().call({from:account});
+    console.log(result);
+  }
+
+  async function RetrieveUserBalance(){
+    const result = contract.methods.retrieveAmount().send({from: account});
+    result.on("transactionHash",(hash)=>{
+      console.log("Transaction sent successfully. Check console for Transaction hash")
+      console.log("Transaction Hash is ",hash)
+    }).once("confirmation",(confirmationNumber,receipt)=>{
+      if(receipt.status){
+        console.log("Transaction processed successfully")
+      }else{
+        console.log("Transaction failed");
+      }
+      console.log(receipt)
+    })
+  }  
 
   return (
     <div className="App">
