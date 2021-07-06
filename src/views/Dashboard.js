@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Web3 from "web3";
 import abi from "../abi.json";
-
+import pinataSDK from "@pinata/sdk";
 // components
 
 import CardLineChart from "components/Cards/CardLineChart.js";
@@ -14,8 +14,8 @@ export default function Dashboard() {
   const contractAddress = "0x03AfF2Af74D355E4bEE93301a5e003F8A2a7ec23";
   const [contract, setContract] = useState();
   const [web3, setWeb3] = useState();
-
-  useEffect(async () => {
+  const pinata = pinataSDK('key', 'secret key');
+  useEffect(() => {
     if (!window.ethereum) {
       console.log("Get metamask plis request");
       return;
@@ -34,6 +34,7 @@ export default function Dashboard() {
       });
     }
     startMetamask();
+  
   }, []);
 
   async function CreateProject(NFTPrice, isPaused, Quantity, URI) {
@@ -109,6 +110,7 @@ export default function Dashboard() {
       });
   }
 
+  //Increase Quantity of NFTs
   async function IncreaseNFTQuantity(ProjectID, NewAmount) {
     const result = contract.methods
       .increateNFTAmount(ProjectID, NewAmount)
@@ -130,11 +132,13 @@ export default function Dashboard() {
       });
   }
 
+  //Shows the total amount our dev has made in sales
   async function ShowBalanceAmount() {
     const result = await contract.methods.showAmount().call({ from: account });
     console.log(result);
   }
 
+  //Returns the total amount our developer has made in NFT sales
   async function RetrieveUserBalance() {
     const result = contract.methods.retrieveAmount().send({ from: account });
     result
@@ -154,9 +158,26 @@ export default function Dashboard() {
       });
   }
 
-  useEffect(() => {
-    contract && RetrieveUserBalance();
-  }, [contract]);
+  //pass JSON as body
+  //Response
+//  {
+//     IpfsHash: This is the IPFS multi-hash provided back for your content,
+//     PinSize: This is how large (in bytes) the content you just pinned is,
+//     Timestamp: This is the timestamp for your content pinning (represented in ISO 8601 format)
+// }
+  async function storeJsonIPFS(body){
+    pinata.pinJSONToIPFS(body).then((result) => {
+      //handle results here
+      console.log(result);
+  }).catch((err) => {
+      //handle error here
+      console.log(err);
+  });
+  }
+
+  // useEffect(() => {
+  //   contract && RetrieveUserBalance();
+  // }, [contract]);
   return (
     <>
       <div className="flex flex-wrap mt-4">
