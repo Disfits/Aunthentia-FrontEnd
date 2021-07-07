@@ -4,7 +4,7 @@ import React from "react";
 
 import CardStats from "components/Cards/CardStats.js";
 
-export default function HeaderStats() {
+export default function HeaderStats({ NumOfProjects }) {
   return (
     <>
       {/* Header */}
@@ -16,7 +16,7 @@ export default function HeaderStats() {
               <div className="w-full lg:w-6/12 xl:w-3/12 px-4">
                 <CardStats
                   statSubtitle="PROJECTS"
-                  statTitle="1"
+                  statTitle={NumOfProjects}
                   statIconName="fas fa-chart-pie"
                   statIconColor="bg-orange-500"
                 />
@@ -24,7 +24,7 @@ export default function HeaderStats() {
               <div className="w-full lg:w-6/12 xl:w-3/12 px-4">
                 <CardStats
                   statSubtitle="TOTAL USERS"
-                  statTitle="10"
+                  statTitle="0"
                   statPercentColor="text-emerald-500"
                   statIconName="far fa-chart-bar"
                   statIconColor="bg-red-500"

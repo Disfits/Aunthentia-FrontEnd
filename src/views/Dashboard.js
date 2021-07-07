@@ -2,16 +2,15 @@ import React, { useState, useEffect } from "react";
 import Web3 from "web3";
 import abi from "../abi.json";
 import pinataSDK from "@pinata/sdk";
-// components
+import axios from "axios";
 
+// components
 import CardLineChart from "components/Cards/CardLineChart.js";
 import CardBarChart from "components/Cards/CardBarChart.js";
 import CardPageVisits from "components/Cards/CardPageVisits.js";
 import CardSocialTraffic from "components/Cards/CardSocialTraffic.js";
 
-import { v4 as uuidv4 } from "uuid";
-
-export default function Dashboard() {
+export default function Dashboard({ setNumOfProjects }) {
   const [account, setAccount] = useState();
   const contractAddress = "0xbF42789cb77cF034c329BbbeEdaa9550344b40F1";
   const [contract, setContract] = useState();
@@ -20,6 +19,12 @@ export default function Dashboard() {
     "8320c40d54b932b00c87",
     "7c3ca50c3980596621640b3264125c4e57cd561063106de9672ffaf225f745b4"
   );
+
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    setNumOfProjects(projects.length);
+  }, [projects]);
 
   //New Project
   const [projectName, setProjectName] = useState("");
@@ -59,6 +64,30 @@ export default function Dashboard() {
     startMetamask();
   }, []);
 
+  //Populate Projects Table
+  useEffect(() => {
+    contract &&
+      GetAllProjectInfo().then((res) => {
+        // console.log(res);
+        setProjects(res);
+        // const promises = res.map((project) => {
+        //   return axios.get("https://ipfs.infura.io/ipfs/" + project.URI);
+        // });
+        // Promise.all(promises).then((data) => {
+        //   let tempProjects = res;
+        //   data.forEach((element, index) => {});
+        // });
+      });
+  }, [contract]);
+
+  //Listen to new projects created
+  useEffect(() => {
+    contract &&
+      contract.events
+        .ProjectCreated({ fromBlock: "latest" })
+        .on("data", (event) => console.log(event));
+  }, [contract]);
+
   async function CreateProject(NFTPrice, isPaused, Quantity, URI) {
     const amount = web3.utils.toWei(NFTPrice, "ether");
     const result = contract.methods
@@ -70,10 +99,18 @@ export default function Dashboard() {
           "Transaction sent successfully. Check console for Transaction hash"
         );
         console.log("Transaction Hash is ", hash);
+        setloadingStatus(
+          "Transaction sent successfully. Transaction Hash is " + hash
+        );
       })
       .once("confirmation", (confirmationNumber, receipt) => {
         if (receipt.status) {
           console.log("Transaction processed successfully");
+          setloadingStatus("Transaction processed successfully");
+          setTimeout(() => {
+            setShowModal(false);
+            setloadingStatus("INPUT");
+          }, 1500);
           GetAllProjectInfo();
         } else {
           console.log("Transaction failed");
@@ -86,12 +123,8 @@ export default function Dashboard() {
     const result = await contract.methods
       .getAllUserProjectInfo()
       .call({ from: account });
-    console.log(result);
+    return result;
   }
-
-  useEffect(() => {
-    contract && GetAllProjectInfo();
-  }, [contract]);
 
   async function ChangeNFTPrice(ProjectID, newPrice) {
     const amount = web3.utils.toWei(newPrice, "ether");
@@ -192,6 +225,7 @@ export default function Dashboard() {
   //     Timestamp: This is the timestamp for your content pinning (represented in ISO 8601 format)
   // }
   async function storeJsonIPFS(body) {
+    setloadingStatus("SAVING DATA TO IPFS");
     pinata
       .pinJSONToIPFS(body)
       .then((result) => {
@@ -217,6 +251,7 @@ export default function Dashboard() {
   // }, [contract]);
 
   const [showModal, setShowModal] = useState(false);
+  const [loadingStatus, setloadingStatus] = useState("INPUT");
   return (
     <>
       {showModal ? (
@@ -224,66 +259,82 @@ export default function Dashboard() {
           <div className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
             <div className="relative w-auto my-6 mx-auto max-w-3xl shadow-lg">
               {/*content*/}
-              <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+              <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full h-100 bg-white outline-none focus:outline-none">
                 {/*header*/}
-                <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
-                  <h3 className="text-3xl font-semibold">Create New Project</h3>
-                  <button
-                    className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none px-3"
-                    onClick={() => setShowModal(false)}
-                  >
-                    <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
-                      ×
-                    </span>
-                  </button>
-                </div>
-                {/*body*/}
-                <div className="relative px-6 py-3 flex-auto">
-                  <div class="mb-3 pt-0">
-                    <input
-                      type="text"
-                      placeholder="Project Name"
-                      class="px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
-                      value={projectName}
-                      onChange={handleChangeProjectName}
-                    />
+                {loadingStatus === "INPUT" ? (
+                  <>
+                    <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
+                      <h3 className="text-3xl font-semibold">
+                        Create New Project
+                      </h3>
+                      <button
+                        className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none px-3"
+                        onClick={() => setShowModal(false)}
+                      >
+                        <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
+                          ×
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="relative px-6 py-3 flex-auto">
+                      <div class="mb-3 pt-0">
+                        <input
+                          type="text"
+                          placeholder="Project Name"
+                          class="px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
+                          value={projectName}
+                          onChange={handleChangeProjectName}
+                        />
+                      </div>
+                      <div class="mb-3 pt-0">
+                        <input
+                          type="text"
+                          placeholder="Price"
+                          class="px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
+                          value={price}
+                          onChange={handleChangePrice}
+                        />
+                      </div>
+                      <div class="mb-3 pt-0">
+                        <input
+                          type="text"
+                          placeholder="Quantity"
+                          class=" px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
+                          value={quantity}
+                          onChange={handleChangeQuantity}
+                        />
+                      </div>
+                    </div>
+
+                    {/*footer*/}
+                    <div className="flex items-center justify-end p-6 border-t border-solid border-blueGray-200 rounded-b py-3 px-6">
+                      <button
+                        className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                        onClick={() => handleCreateNewProject()}
+                      >
+                        Create New Project
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="px-6 py-3 flex-auto">
+                    <div
+                      style={{ height: 200, color: "green" }}
+                      className="flex justify-center items-center font-bold"
+                    >
+                      {loadingStatus}
+                    </div>
                   </div>
-                  <div class="mb-3 pt-0">
-                    <input
-                      type="text"
-                      placeholder="Price"
-                      class="px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
-                      value={price}
-                      onChange={handleChangePrice}
-                    />
-                  </div>
-                  <div class="mb-3 pt-0">
-                    <input
-                      type="text"
-                      placeholder="Quantity"
-                      class=" px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:shadow-outline w-full"
-                      value={quantity}
-                      onChange={handleChangeQuantity}
-                    />
-                  </div>
-                </div>
-                {/*footer*/}
-                <div className="flex items-center justify-end p-6 border-t border-solid border-blueGray-200 rounded-b py-3 px-6">
-                  <button
-                    className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                    type="button"
-                    onClick={() => handleCreateNewProject()}
-                  >
-                    Create New Project
-                  </button>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -317,7 +368,7 @@ export default function Dashboard() {
                   <thead>
                     <tr>
                       <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                        Project Name
+                        Project ID
                       </th>
                       <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                         Status
@@ -334,23 +385,27 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left">
-                        Random Project
-                      </th>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        Running
-                      </td>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        340
-                      </td>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        0.02
-                      </td>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        10
-                      </td>
-                    </tr>
+                    {projects.map((project, index) => {
+                      return (
+                        <tr>
+                          <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left">
+                            #{project.projectID}
+                          </th>
+                          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                            {project.paused ? "Paused" : "Running"}
+                          </td>
+                          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                            {project.NFTAmount}
+                          </td>
+                          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                            {project.NFTPrice / Math.pow(10, 18)}
+                          </td>
+                          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                            {project.amountSold}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
